@@ -56,9 +56,9 @@ def process(data):
     # plt.show()
 
     # scale all values
-    #scalar = StandardScaler()
-    #data_scaled = scalar.fit_transform(data.values)
-    #data = pd.DataFrame(data_scaled, index=data.index, columns=data.columns)
+    scalar = StandardScaler()
+    data_scaled = scalar.fit_transform(data.values)
+    data = pd.DataFrame(data_scaled, index=data.index, columns=data.columns)
 
     return data
 
