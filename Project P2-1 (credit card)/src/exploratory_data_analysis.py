@@ -7,34 +7,32 @@ from src.load_and_process_data import load
 
 def eda():
     data = load()
-    best_cols = ["MONTHLY_AVG_PURCHASE", "MONTHLY_CASH_ADVANCE", "LIMIT_RATIO", "PAYMENT_MIN_RATIO"]
-    data_final = pd.DataFrame(data[best_cols])
-    alg = KMeans(n_clusters=6)
-    label = alg.fit_predict(data_final)
+    k_means = KMeans(n_clusters=6)
 
-    # create a 'cluster' column
-    data_final['cluster'] = label
-    best_cols.append('cluster')
+    cols = ["BALANCE", "PURCHASES", "CASH_ADVANCE", "CREDIT_LIMIT", "PAYMENTS", "MINIMUM_PAYMENTS"]
+    selected = pd.DataFrame(data[cols])
 
-    # make a Seaborn pairplot
-    sb.countplot(data=data_final, hue='cluster', x='cluster')
-    sb.pairplot(data_final[best_cols], hue='cluster', vars=best_cols, palette= 'Dark2', diag_kind='kde')
+    label = k_means.fit_predict(selected)
+
+    # 'cluster' column
+    selected['cluster'] = label
+    cols.append('cluster')
+
+    # Seaborn pairplot
+    sb.countplot(data=selected, hue='cluster', x='cluster')
+    sb.pairplot(selected[cols], hue='cluster', vars=cols, palette='Dark2')
     plt.show()
 
-    best_cols1 = ["BALANCE", "PURCHASES", "CASH_ADVANCE", "CREDIT_LIMIT", "PAYMENTS", "MINIMUM_PAYMENTS"]
-    data_final1 = pd.DataFrame(data[best_cols1])
-    alg = KMeans(n_clusters=6)
-    label = alg.fit_predict(data_final1)
+    cols1 = ["MONTHLY_AVG_PURCHASE", "MONTHLY_CASH_ADVANCE", "LIMIT_RATIO", "PAYMENT_MIN_RATIO"]
+    selected1 = pd.DataFrame(data[cols1])
 
-    # create a 'cluster' column
-    data_final1['cluster'] = label
-    best_cols1.append('cluster')
+    label1 = k_means.fit_predict(selected1)
 
-    # make a Seaborn pairplot
-    sb.countplot(data=data_final1, hue='cluster', x='cluster')
-    sb.pairplot(data_final1[best_cols1], hue='cluster', vars=best_cols1, palette='Dark2', diag_kind='kde')
+    # 'cluster' column
+    selected1['cluster'] = label1
+    cols1.append('cluster')
+
+    # Seaborn pairplot
+    sb.countplot(data=selected1, hue='cluster', x='cluster')
+    sb.pairplot(selected1[cols1], hue='cluster', vars=cols1, palette='Dark2')
     plt.show()
-
-
-if __name__ == '__main__':
-    eda()
