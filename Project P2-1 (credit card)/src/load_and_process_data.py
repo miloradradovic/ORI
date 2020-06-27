@@ -9,6 +9,7 @@ warnings.filterwarnings(action="ignore")
 
 
 def load():
+    print("Started data load and process!")
     # load the data
     data = pd.read_csv('../data/credit_card_data.csv')
     return process(data)

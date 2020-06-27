@@ -2,11 +2,10 @@ import matplotlib.pyplot as plt
 import seaborn as sb
 from sklearn.cluster import KMeans
 import pandas as pd
-from src.load_and_process_data import load
 
 
-def eda():
-    data = load()
+def eda(data):
+    print("Started exploratory data analysis!")
     k_means = KMeans(n_clusters=6)
 
     cols = ["BALANCE", "PURCHASES", "CASH_ADVANCE", "CREDIT_LIMIT", "PAYMENTS", "MINIMUM_PAYMENTS"]

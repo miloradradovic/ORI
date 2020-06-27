@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 
 
 def get_insights(data):
+    print("Getting insights from KPIs!")
             # Purchase By Type: ONEOFF_ONLY,   INSTALLMENTS_ONLY,   BOTH_ONEOFF_INSTALL,   NONE_ONEOFF_INSTALL
             # This KPI is done here because of it's none number value and later is dropped
     data["PURCHASE_TYPE"] = data.apply(purchase_type, axis=1)
