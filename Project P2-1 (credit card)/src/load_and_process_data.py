@@ -1,14 +1,12 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy import stats
+from src.get_insights_from_KPIs import get_insights
 
 # preprocessing
 from sklearn.preprocessing import StandardScaler
 
 # ignore warnings
 import warnings
-
 warnings.filterwarnings(action="ignore")
 
 # clustering
@@ -34,7 +32,6 @@ def process(data):
 
     # fill NA with median
     data = data.apply(lambda x: x.fillna(x.mean()), axis=0)
-
             # double check corrupted inputs
             # corruption = data.isna().sum()
             # print(corruption)
@@ -49,6 +46,8 @@ def process(data):
             # Payment: Min Payment
     data['PAYMENT_MIN_RATIO'] = data.apply(lambda x: x['PAYMENTS'] / x['MINIMUM_PAYMENTS'], axis=1)
 
+    get_insights(data)
+    data = data.drop('PURCHASE_TYPE', 1)
     # outlier treatment - log transformation
     # data.plot(kind='box')
     # plt.show()
@@ -57,26 +56,11 @@ def process(data):
     # plt.show()
 
     # scale all values
-    scalar = StandardScaler()
-    data_scaled = scalar.fit_transform(data.values)
-    data = pd.DataFrame(data_scaled, index=data.index, columns=data.columns)
-
-    # Purchase By Type: ONEOFF_ONLY,   INTSTALLMENTS_ONLY,   BOTH_ONEOFF_INSTALL,   NONE_ONEOFF_INSTALL
-            # This KPI is done after outlier treatment and scale because of it's none number value
-    data["PURCHASE_TYPE"] = data.apply(purchase_type, axis=1)
+    #scalar = StandardScaler()
+    #data_scaled = scalar.fit_transform(data.values)
+    #data = pd.DataFrame(data_scaled, index=data.index, columns=data.columns)
 
     return data
-
-
-def purchase_type(x):
-    if (x.ONEOFF_PURCHASES > 0) & (x.INSTALLMENTS_PURCHASES == 0):
-        return "ONEOFF_ONLY"
-    if (x.ONEOFF_PURCHASES == 0) & (x.INSTALLMENTS_PURCHASES > 0):
-        return "INTSTALLMENTS_ONLY"
-    if (x.ONEOFF_PURCHASES > 0) & (x.INSTALLMENTS_PURCHASES > 0):
-        return "BOTH_ONEOFF_INSTALL"
-    if (x.ONEOFF_PURCHASES == 0) & (x.INSTALLMENTS_PURCHASES == 0):
-        return "NONE_ONEOFF_INSTALL"
 
 
 if __name__ == '__main__':
