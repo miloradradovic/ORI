@@ -24,7 +24,8 @@ def process(data):
             # print(corruption)
 
     # fill NA with median
-    data = data.apply(lambda x: x.fillna(x.mean()), axis=0)
+            # data = data.apply(lambda x: x.fillna(x.mean()), axis=0)
+    data = data.interpolate(method="linear")
             # double check corrupted inputs
             # corruption = data.isna().sum()
             # print(corruption)
@@ -49,9 +50,13 @@ def process(data):
             # data.plot(kind='box')
             # plt.show()
 
+    pd.set_option('display.max_columns', 25)
+
     # scale all values
     scalar = StandardScaler()
     data_scaled = scalar.fit_transform(data.values)
     data = pd.DataFrame(data_scaled, columns=data.columns)
+
+
 
     return data
