@@ -15,6 +15,7 @@
 """
   Interfaces for capture agents and agent factories
 """
+from random import random
 
 from game import Agent
 import distanceCalculator
