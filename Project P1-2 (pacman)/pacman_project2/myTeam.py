@@ -7,6 +7,8 @@
 # For more info, see http://inst.eecs.berkeley.edu/~cs188/sp09/pacman.html
 import math
 
+
+
 from captureAgents import CaptureAgent
 import distanceCalculator
 import random, time, util
@@ -20,8 +22,8 @@ from util import nearestPoint
 #################
 
 def createTeam(firstIndex, secondIndex, isRed,
-               first='MyOffensiveAgent', second='MyDefensiveAgent'):
-    """
+               first='OffensiveReflexAgent', second='DefensiveReflexAgent'):
+  """
   This function should return a list of two agents that will form the
   team, initialized using firstIndex and secondIndex as their agent
   index numbers.  isRed is True if the red team is being created, and
@@ -34,90 +36,134 @@ def createTeam(firstIndex, secondIndex, isRed,
   any extra arguments, so you should make sure that the default
   behavior is what you want for the nightly contest.
   """
-    return [eval(first)(firstIndex), eval(second)(secondIndex)]
+  return [MyAgent(firstIndex), MyAgent(secondIndex)]
 
 
 ##########
 # Agents #
 ##########
 
-
-class ReflexCaptureAgent(CaptureAgent):
-  """
-  A base class for reflex agents that chooses score-maximizing actions
-  """
+class MyAgent(CaptureAgent):
+  def registerInitialState(self, gameState):
+    self.start = gameState.getAgentPosition(self.index)
+    CaptureAgent.registerInitialState(self, gameState)
 
   def chooseAction(self, gameState):
-    """
-    Picks among the actions with the highest Q(s,a).
-    """
-    actions = gameState.getLegalActions(self.index)
 
-    # You can profile your evaluation time by uncommenting these lines
-    # start = time.time()
-    values = [self.evaluate(gameState, a) for a in actions]
-    # print 'eval time for agent %d: %.4f' % (self.index, time.time() - start)
+    legalActions = gameState.getLegalActions(self.index)
+    nextStates = []
+    for action in legalActions:
+      nextStates.append(gameState.generateSuccessor(self.index, action))
+    actionValues = []
 
-    maxValue = max(values)
-    bestActions = [a for a, v in zip(actions, values) if v == maxValue]
+    for state in nextStates:
+      actionValues.append(self.getActionValue(state))
+    print(legalActions)
+    print(actionValues)
+    best = max(actionValues)
+    return legalActions[actionValues.index(best)]
 
-    return random.choice(bestActions)
+  def evaluate(self, gameState):
 
-  def getSuccessor(self, gameState, action):
-    """
-    Finds the next successor which is a grid position (location tuple).
-    """
-    successor = gameState.generateSuccessor(self.index, action)
-    pos = successor.getAgentState(self.index).getPosition()
-    if pos != nearestPoint(pos):
-      # Only half a grid position was covered
-      return successor.generateSuccessor(self.index, action)
-    else:
-      return successor
-
-  def evaluate(self, gameState, action):
-    """
-    Computes a linear combination of features and feature weights
-    """
-    features = self.getFeatures(gameState, action)
-    weights = self.getWeights(gameState, action)
+    features = self.getFeatures(gameState)
+    weights = self.getWeights(gameState)
     return features * weights
 
-class MyDefensiveAgent(ReflexCaptureAgent):
+  def getFeatures(self, gameState):
 
-  def getFeatures(self, gameState, action):
+    # OFFENSIVE
     features = util.Counter()
-    successor = self.getSuccessor(gameState, action)
-    myPosition = successor.getAgentState(self.index).getPosition()
-    enemies = []
-    for opponent in self.getOpponents(successor):
-      enemies.append(successor.getAgentState(opponent))
+    foodList = self.getFood(gameState).asList()
+    features['successorScore'] = len(foodList)  # self.getScore(successor)
+    myPosition = gameState.getAgentState(self.index).getPosition()
+    walls = gameState.getWalls()
+    topFoodList = [(x, y) for x, y in foodList if y > math.floor(walls.height / 2)]
+    botFoodList = [(x, y) for x, y in foodList if y <= math.floor(walls.height / 2)]
 
-    invaders = []
+    if self.index > 1:
+      distancesFromFood = []
+      if(len(topFoodList) != 0):
+        for food in topFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodTOP'] = minDistance
+      else:
+        for food in botFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodBOTTOM'] = minDistance
+    else:
+      distancesFromFood = []
+      if len(botFoodList) != 0:
+
+        for food in botFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodBOTTOM'] = minDistance
+      else:
+        for food in topFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodTOP'] = minDistance
+
+
+    enemies = []
+    for opponent in self.getOpponents(gameState):
+      enemies.append(gameState.getAgentState(opponent))
+    pacmans = [] #invaders
+    ghosts = []  #defenders
     for enemy in enemies:
       if enemy.isPacman and enemy.getPosition() != None:
-        invaders.append(enemy)
-    features['numInvaders'] = len(invaders)
-    if len(invaders) > 0:  # ima nekoga na nasoj strani, idi u defense
-      offensive = False
-      distancesToInvaders = []
-      for invader in invaders:
-        distance = self.getMazeDistance(myPosition, invader.getPosition())
-        distancesToInvaders.append(distance)
-      features['invaderDistance'] = min(distancesToInvaders)
+        pacmans.append(enemy)
+      else:
+        ghosts.append(enemy)
+    features['numghosts'] = - len(ghosts)
+    if len(ghosts) > 0:
+      dists = [self.getMazeDistance(myPosition, ghost.getPosition()) for ghost in ghosts]
+      features['ghostDistance'] = - min(dists)
+
+    escape = [gameState.getLegalActions()]
+    if len(ghosts) > 0:
+      distancesFromGhost = []
+      for ghost in ghosts:
+        distancesFromGhost.append(self.getMazeDistance(myPosition, ghost.getPosition()))
+      minGhostDistance = min(distancesFromGhost)
+      if len(escape) == 1 and minGhostDistance < 4:
+        features['deadend'] = 1
+      else:
+        features['deadend'] = 0
+
+    if gameState.getAgentState(self.index).numCarrying > 3:
+
+      features['runaway'] = 100
+    else:
+      features['runaway'] = 0
+
+    # DEFENSIVE FEATURES
+
+    features['numInvaders'] = len(pacmans)
+    if len(pacmans) > 0:
+      distancesFromInvaders = []
+      for invader in pacmans:
+        distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
+      features['invaderDistance'] = min(distancesFromInvaders)
+
+    fooddefenseList = self.getFoodYouAreDefending(gameState).asList()
+    features['savefood'] = len(fooddefenseList)
+
     return features
 
-
-  def getWeights(self, gameState, action):
-    return {'numInvaders': -1000,
-            'invaderDistance': -5}
+  def getWeights(self, gameState):
 
 
-class MyOffensiveAgent(ReflexCaptureAgent):
+    if gameState.getScore() > 0:
+      return {'numInvaders': -1000, 'invaderDistance': -10, 'deadend': 0, 'runaway': 1}
+    else:
+      return {'successorScore': -100, 'distanceToFoodTOP': -1, 'distanceToFoodBOTTOM': -1, 'numInvaders': -100, 'invaderDistance': -10}
 
-  def getFeatures(self, gameState, action):
-    pass
-
-  def getWeights(self, gameState, action):
-    pass
-
+  def getActionValue(self, state):
+    return self.evaluate(state)
