@@ -1,6 +1,7 @@
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_samples, silhouette_score
+from src.decision_tree import cluster_report
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
@@ -113,47 +114,6 @@ def pca(data):
     plt.show()
 
 
-def deep_dive(data):
-
     km = KMeans(n_clusters=6)
-    km.fit(data)
-
-    labels = km.predict(data)
-
-    data['labels'] = labels
-
-    print("\t\tNum of elements in cluster:")
-
-    values = data['labels'].value_counts()
-    for i in range(len(values)):
-        print("\t\t\t" + str(values.index[i]) + " " + str(values[i]))
-
-    # Cluster 0
-    cluster_0 = data[data['labels'] == 0]
-    cluster_0.describe().to_csv("../data/cluster_0.csv")
-    print(cluster_0.describe())
-
-    # Cluster 1
-    cluster_1 = data[data['labels'] == 1]
-    cluster_1.describe().to_csv("../data/cluster_1.csv")
-    #print(cluster_1.describe())
-
-    # Cluster 2
-    cluster_2 = data[data['labels'] == 2]
-    cluster_2.describe().to_csv("../data/cluster_2.csv")
-    # print(cluster_2.describe())
-
-    # Cluster 3
-    cluster_3 = data[data['labels'] == 3]
-    cluster_3.describe().to_csv("../data/cluster_3.csv")
-    # print(cluster_3.describe())
-
-    # Cluster 4
-    cluster_4 = data[data['labels'] == 4]
-    cluster_4.describe().to_csv("../data/cluster_4.csv")
-    # print(cluster_4.describe())
-
-    # Cluster 5
-    cluster_5 = data[data['labels'] == 5]
-    cluster_5.describe().to_csv("../data/cluster_5.csv")
-    # print(cluster_5.describe())
+    cluster = km.fit_predict(data_pca)
+    cluster_report(data, cluster)
