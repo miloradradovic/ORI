@@ -44,6 +44,7 @@ def createTeam(firstIndex, secondIndex, isRed,
 ##########
 
 class MyAgent(CaptureAgent):
+
   def registerInitialState(self, gameState):
     self.start = gameState.getAgentPosition(self.index)
     CaptureAgent.registerInitialState(self, gameState)
@@ -58,9 +59,10 @@ class MyAgent(CaptureAgent):
 
     for state in nextStates:
       actionValues.append(self.getActionValue(state))
+    best = max(actionValues)
     print(legalActions)
     print(actionValues)
-    best = max(actionValues)
+    print(legalActions[actionValues.index(best)])
     return legalActions[actionValues.index(best)]
 
   def evaluate(self, gameState):
@@ -71,7 +73,7 @@ class MyAgent(CaptureAgent):
 
   def getFeatures(self, gameState):
 
-    # OFFENSIVE
+    #inicijalizacija svega
     features = util.Counter()
     foodList = self.getFood(gameState).asList()
     features['successorScore'] = len(foodList)  # self.getScore(successor)
@@ -79,91 +81,87 @@ class MyAgent(CaptureAgent):
     walls = gameState.getWalls()
     topFoodList = [(x, y) for x, y in foodList if y > math.floor(walls.height / 2)]
     botFoodList = [(x, y) for x, y in foodList if y <= math.floor(walls.height / 2)]
-
-    if self.index > 1:
-      distancesFromFood = []
-      if(len(topFoodList) != 0):
-        for food in topFoodList:
-          distance = self.getMazeDistance(myPosition, food)
-          distancesFromFood.append(distance)
-        minDistance = min(distancesFromFood)
-        features['distanceToFoodTOP'] = minDistance
-      else:
-        for food in botFoodList:
-          distance = self.getMazeDistance(myPosition, food)
-          distancesFromFood.append(distance)
-        minDistance = min(distancesFromFood)
-        features['distanceToFoodBOTTOM'] = minDistance
-    else:
-      distancesFromFood = []
-      if len(botFoodList) != 0:
-
-        for food in botFoodList:
-          distance = self.getMazeDistance(myPosition, food)
-          distancesFromFood.append(distance)
-        minDistance = min(distancesFromFood)
-        features['distanceToFoodBOTTOM'] = minDistance
-      else:
-        for food in topFoodList:
-          distance = self.getMazeDistance(myPosition, food)
-          distancesFromFood.append(distance)
-        minDistance = min(distancesFromFood)
-        features['distanceToFoodTOP'] = minDistance
-
-
     enemies = []
     for opponent in self.getOpponents(gameState):
       enemies.append(gameState.getAgentState(opponent))
-    pacmans = [] #invaders
-    ghosts = []  #defenders
+    pacmans = []  # invaders
+    ghosts = []  # defenders
     for enemy in enemies:
       if enemy.isPacman and enemy.getPosition() != None:
         pacmans.append(enemy)
       else:
         ghosts.append(enemy)
-    features['numghosts'] = - len(ghosts)
-    if len(ghosts) > 0:
-      dists = [self.getMazeDistance(myPosition, ghost.getPosition()) for ghost in ghosts]
-      features['ghostDistance'] = - min(dists)
+    #======================================================================
 
-    escape = [gameState.getLegalActions()]
-    if len(ghosts) > 0:
-      distancesFromGhost = []
-      for ghost in ghosts:
-        distancesFromGhost.append(self.getMazeDistance(myPosition, ghost.getPosition()))
-      minGhostDistance = min(distancesFromGhost)
-      if len(escape) == 1 and minGhostDistance < 4:
-        features['deadend'] = 1
+    if self.index > 1:
+      distancesFromFood = []
+      if (len(topFoodList) != 0):
+        for food in topFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodTOP'] = minDistance
       else:
-        features['deadend'] = 0
-
-    if gameState.getAgentState(self.index).numCarrying > 3:
-
-      features['runaway'] = 100
+        for food in botFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodBOTTOM'] = minDistance
     else:
-      features['runaway'] = 0
+      distancesFromFood = []
+      if (len(botFoodList) != 0):
+        for food in botFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodBOTTOM'] = minDistance
+      else:
+        for food in topFoodList:
+          distance = self.getMazeDistance(myPosition, food)
+          distancesFromFood.append(distance)
+        minDistance = min(distancesFromFood)
+        features['distanceToFoodTOP'] = minDistance
 
-    # DEFENSIVE FEATURES
 
     features['numInvaders'] = len(pacmans)
     if len(pacmans) > 0:
       distancesFromInvaders = []
       for invader in pacmans:
         distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
-      features['invaderDistance'] = min(distancesFromInvaders)
+      if gameState.getAgentState(self.index).scaredTimer == 0 or self.checkTeammate(gameState) == False:
+        features['invaderDistance'] = min(distancesFromInvaders)
 
-    fooddefenseList = self.getFoodYouAreDefending(gameState).asList()
-    features['savefood'] = len(fooddefenseList)
+
+    if len(ghosts) > 0 and gameState.getAgentState(self.index).isPacman:
+      distancesFromGhosts = []
+      for ghost in ghosts:
+        distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
+      if min(distancesFromGhosts) < 6:
+        if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
+          print("USAO U DUH JE BLIZU")
+          features['ghostDistance'] = min(distancesFromGhosts)
 
     return features
 
+  def checkTeammate(self, gameState):
+    if (self.index == 0 or self.index == 1) and gameState.getAgentState(self.index).isPacman:
+      if not gameState.getAgentState(self.index+2).isPacman:
+        return True
+      else:
+        return False
+    else:
+      if not gameState.getAgentState(self.index-2).isPacman:
+        return True
+      else:
+        return False
+
+
   def getWeights(self, gameState):
 
-
     if gameState.getScore() > 0:
-      return {'numInvaders': -1000, 'invaderDistance': -10, 'deadend': 0, 'runaway': 1}
+      return {'ghostDistance': -1700,'numInvaders': -1000, 'invaderDistance': -10}
     else:
-      return {'successorScore': -100, 'distanceToFoodTOP': -1, 'distanceToFoodBOTTOM': -1, 'numInvaders': -100, 'invaderDistance': -10}
+      return {'ghostDistance': -1700,'successorScore': -100, 'distanceToFoodTOP': -1, 'distanceToFoodBOTTOM': -1, 'numInvaders': -100, 'invaderDistance': -10}
 
   def getActionValue(self, state):
     return self.evaluate(state)
