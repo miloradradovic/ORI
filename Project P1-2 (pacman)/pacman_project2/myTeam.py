@@ -61,7 +61,32 @@ class MyAgent(CaptureAgent):
       actionValues.append(self.getActionValue(state))
     best = max(actionValues)
 
+    foodLeft = len(self.getFood(gameState).asList())
+
+    if foodLeft <= 2:
+      bestDist = 9999
+      for action in legalActions:
+        successor = self.getSuccessor(gameState, action)
+        pos2 = successor.getAgentPosition(self.index)
+        dist = self.getMazeDistance(self.start,pos2)
+        if dist < bestDist:
+          bestAction = action
+          bestDist = dist
+      return bestAction
+
     return legalActions[actionValues.index(best)]
+
+  def getSuccessor(self, gameState, action):
+    """
+    Finds the next successor which is a grid position (location tuple).
+    """
+    successor = gameState.generateSuccessor(self.index, action)
+    pos = successor.getAgentState(self.index).getPosition()
+    if pos != nearestPoint(pos):
+      # Only half a grid position was covered
+      return successor.generateSuccessor(self.index, action)
+    else:
+      return successor
 
   def evaluate(self, gameState):
 
@@ -137,8 +162,7 @@ class MyAgent(CaptureAgent):
       #distancesManhattan = []
       for ghost in ghosts:
         distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
-        #distancesManhattan.append(util.manhattanDistance(myPosition, ghost.getPosition()))
-      if min(distancesFromGhosts) < 6:
+      if min(distancesFromGhosts) < 7:
         if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
           features['ghostDistance'] = min(distancesFromGhosts)
 
