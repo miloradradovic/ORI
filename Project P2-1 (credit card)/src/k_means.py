@@ -1,7 +1,6 @@
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_samples, silhouette_score
-from src.decision_tree import cluster_report
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
@@ -22,7 +21,7 @@ def the_elbow_method(data, minimum=2, maximum=18):
     plt.show()
 
 
-def silhouette_scores(data, minimum=2, maximum=7):
+def silhouette_scores(data, minimum=2, maximum=9):
     print("Started Silhouette scores!")
     # Used to study the separation distance between the resulting clusters.
     # Displays a measure of how close each point in one cluster is to points
@@ -86,15 +85,15 @@ def silhouette_scores(data, minimum=2, maximum=7):
 def pca(data):
     print("Started principal component analysis!")
     """
-    for y in range(2, 7):
+    for y in range(2, 9):
     pca = PCA(n_components=y)
     data_pca = pca.fit_transform(data)
-    for x in range(2, 7):
+    for x in range(2, 9):
         alg = KMeans(n_clusters = x, )
         label = alg.fit_predict(data_pca)
         print('Silhouette-Score for', x,  'Clusters: ', silhouette_score(data_pca, label) , '       Inertia: ',alg.inertia_)
     print()
-    #conclusion: 6 is a good number of clusters
+    #conclusion: 8 is a good number of clusters
     """
 
     pca = PCA(n_components=2)
@@ -106,14 +105,9 @@ def pca(data):
     plt.xlabel('PC1')
     plt.ylabel('PC2')
 
-    model = KMeans(n_clusters=6).fit(data_pca)
+    model = KMeans(n_clusters=8).fit(data_pca)
     model_label = model.labels_
 
     scatter = plt.scatter(data_pca[:, 0], data_pca[:, 1], c=model_label, cmap='Spectral')
     plt.colorbar(scatter)
     plt.show()
-
-
-    km = KMeans(n_clusters=6)
-    cluster = km.fit_predict(data_pca)
-    cluster_report(data, cluster)

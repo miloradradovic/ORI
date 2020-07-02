@@ -6,7 +6,7 @@ import pandas as pd
 
 def eda(data):
     print("Started exploratory data analysis!")
-    k_means = KMeans(n_clusters=6)
+    k_means = KMeans(n_clusters=7)
 
     cols = ["BALANCE", "PURCHASES", "CASH_ADVANCE", "CREDIT_LIMIT", "PAYMENTS", "MINIMUM_PAYMENTS"]
     selected = pd.DataFrame(data[cols])

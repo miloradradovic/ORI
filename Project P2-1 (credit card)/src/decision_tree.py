@@ -1,5 +1,11 @@
 from sklearn.tree import _tree, DecisionTreeClassifier
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 import pandas as pd
+
+# Code found on :
+    # https://towardsdatascience.com/the-easiest-way-to-interpret-clustering-result-8137e488a127
+    # and modified for our usage
 
 def get_class_rules(tree: DecisionTreeClassifier, feature_names: list):
     inner_tree: _tree.Tree = tree.tree_
@@ -59,3 +65,13 @@ def cluster_report(data: pd.DataFrame, clusters, min_samples_leaf=40, pruning_le
     report_df = pd.DataFrame(report_class_list, columns=['class_name', 'rule_list'])
     report_df = pd.merge(cluster_instance_df, report_df, on='class_name', how='left')
     (report_df.sort_values(by='class_name')[['class_name', 'instance_count', 'rule_list']]).to_csv("../data/results.csv")
+
+
+def decision_tree(data):
+    print("Started making decision tree!")
+    pca = PCA(n_components=2)
+    data_pca = pca.fit_transform(data)
+
+    km = KMeans(n_clusters=8)
+    cluster = km.fit_predict(data_pca)
+    cluster_report(data, cluster)

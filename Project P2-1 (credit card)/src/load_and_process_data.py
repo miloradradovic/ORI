@@ -16,8 +16,15 @@ def load():
 
 
 def process(data):
-    # drop the id column
+    # drop irrelevant columns
     data = data.drop('CUST_ID', 1)
+    data = data.drop('BALANCE_FREQUENCY', 1)
+    data = data.drop('PURCHASES_FREQUENCY', 1)
+    data = data.drop('ONEOFF_PURCHASES_FREQUENCY', 1)
+    data = data.drop('PURCHASES_INSTALLMENTS_FREQUENCY', 1)
+    data = data.drop('CASH_ADVANCE_FREQUENCY', 1)
+    data = data.drop('PRC_FULL_PAYMENT', 1)
+
 
             # check if there are corrupted inputs in data
             # corruption = data.isna().sum()
