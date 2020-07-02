@@ -47,35 +47,71 @@ class MyAgent(CaptureAgent):
 
   def registerInitialState(self, gameState):
     self.start = gameState.getAgentPosition(self.index)
-    self.depth = 3
+    self.depth = 2
     CaptureAgent.registerInitialState(self, gameState)
 
   def chooseAction(self, gameState):
 
     legalActions = gameState.getLegalActions(self.index)
-    nextStates = []
-    for action in legalActions:
-      nextStates.append(gameState.generateSuccessor(self.index, action))
-    actionValues = []
+    bestAction = None
+    bestValue = float('-inf')
 
-    for state in nextStates:
-      actionValues.append(self.getActionValue(state))
-    best = max(actionValues)
+    for action in legalActions:
+      nextState = gameState.generateSuccessor(self.index, action)
+      actionValue = self.generateValue(nextState, self.index, 0)
+      if actionValue > bestValue:
+        bestValue = actionValue
+        bestAction = action
 
     foodLeft = len(self.getFood(gameState).asList())
 
     if foodLeft <= 2:
-      bestDist = 9999
-      for action in legalActions:
-        successor = self.getSuccessor(gameState, action)
-        pos2 = successor.getAgentPosition(self.index)
-        dist = self.getMazeDistance(self.start,pos2)
-        if dist < bestDist:
-          bestAction = action
-          bestDist = dist
-      return bestAction
+        bestDist = 9999
+        for action in legalActions:
+            successor = self.getSuccessor(gameState, action)
+            pos2 = successor.getAgentPosition(self.index)
+            dist = self.getMazeDistance(self.start, pos2)
+            if dist < bestDist:
+                bestAction = action
+                bestDist = dist
+        return bestAction
 
-    return legalActions[actionValues.index(best)]
+    return bestAction
+
+  #minimax
+  def generateValue(self, gameState, agentIndex, depth):
+
+    if depth == self.depth:
+        if depth%2 == 0:
+            legalActions = gameState.getLegalActions(agentIndex)
+            values = []
+            for action in legalActions:
+                value = self.evaluate(gameState.generateSuccessor(agentIndex, action))
+                values.append(value)
+            return max(values)
+        else:
+            legalActions = gameState.getLegalActions(agentIndex)
+            values = []
+            for action in legalActions:
+                value = self.evaluate(gameState.generateSuccessor(agentIndex, action))
+                values.append(value)
+            return min(values)
+    else:
+        #idi jos u dubinu
+        if depth %2 == 0:
+            legalActions = gameState.getLegalActions(agentIndex)
+            values = []
+            for action in legalActions:
+                value = self.generateValue(gameState.generateSuccessor(agentIndex, action), agentIndex, depth + 1)
+                values.append(value)
+            return max(values)
+        else:
+            legalActions = gameState.getLegalActions(agentIndex)
+            values = []
+            for action in legalActions:
+                value = self.generateValue(gameState.generateSuccessor(agentIndex, action), agentIndex, depth + 1)
+                values.append(value)
+            return min(values)
 
   def getSuccessor(self, gameState, action):
     """
@@ -178,15 +214,3 @@ class MyAgent(CaptureAgent):
 
   def getActionValue(self, state):
     return self.evaluate(state)
-
-  def minValue(self, gameState):
-    pass
-
-  def maxValue(self, gameState):
-    pass
-
-  def minimax(self, gameState):
-    pass
-
-  def evaluateFunction(self, gameState):
-    pass
