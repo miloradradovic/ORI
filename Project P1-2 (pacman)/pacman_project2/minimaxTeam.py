@@ -163,6 +163,7 @@ class MyAgent(CaptureAgent):
             distance = self.getMazeDistance(myPosition, food)
             distancesFromFood.append(distance)
           minDistance = min(distancesFromFood)
+
           features['distanceToFood'] = minDistance
         else:
           for food in botFoodList:
@@ -187,30 +188,31 @@ class MyAgent(CaptureAgent):
 
     #defensive features
     features['numInvaders'] = len(pacmans)
-    if len(pacmans) > 0 and gameState.getAgentState(self.index).scaredTimer <= 10:
+    if len(pacmans) > 0 and gameState.getAgentState(self.index).scaredTimer <= 10 and not gameState.getAgentState(self.index).isPacman:
       distancesFromInvaders = []
       for invader in pacmans:
         distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
       features['invaderDistance'] = min(distancesFromInvaders)
 
+    if len(pacmans) > 0 and gameState.getAgentState(self.index).isPacman:
+        distancesFromInvaders = []
+        for invader in pacmans:
+            distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
+        features['invaderDistance'] = min(distancesFromInvaders)
+
     #features za bjezanje ako je pri napadanju duh blizu
     if len(ghosts) > 0 and gameState.getAgentState(self.index).isPacman:
       distancesFromGhosts = []
-      #distancesManhattan = []
       for ghost in ghosts:
         distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
-      if min(distancesFromGhosts) < 7:
+      if min(distancesFromGhosts) < 5:
         if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
           if min(distancesFromGhosts) == 1:
               features['ghostDistance'] = 2000
           elif min(distancesFromGhosts) == 2:
               features['ghostDistance'] = 1000
           elif min(distancesFromGhosts) == 3:
-              features['ghostDistance'] = 500
-          elif min(distancesFromGhosts) == 4:
               features['ghostDistance'] = 300
-          elif min(distancesFromGhosts) == 5:
-              features['ghostDistance'] = 200
           else:
               features['ghostDistance'] = 100
 
@@ -219,9 +221,9 @@ class MyAgent(CaptureAgent):
   def getWeights(self, gameState):
 
     if gameState.getScore() > 0:
-      return {'ghostDistance': -5000,'numInvaders': -1000, 'invaderDistance': -10}
+      return {'ghostDistance': -2000,'numInvaders': -1000, 'invaderDistance': -10}
     else:
-      return {'ghostDistance': -5000,'successorScore': -100, 'distanceToFood': -1, 'numInvaders': -100, 'invaderDistance': -10}
+      return {'ghostDistance': -2000,'successorScore': -100, 'distanceToFood': -1, 'numInvaders': -100, 'invaderDistance': -10}
 
   def getActionValue(self, state):
     return self.evaluate(state)
