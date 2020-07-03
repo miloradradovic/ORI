@@ -201,16 +201,27 @@ class MyAgent(CaptureAgent):
         distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
       if min(distancesFromGhosts) < 7:
         if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
-          features['ghostDistance'] = min(distancesFromGhosts)
+          if min(distancesFromGhosts) == 1:
+              features['ghostDistance'] = 2000
+          elif min(distancesFromGhosts) == 2:
+              features['ghostDistance'] = 1000
+          elif min(distancesFromGhosts) == 3:
+              features['ghostDistance'] = 500
+          elif min(distancesFromGhosts) == 4:
+              features['ghostDistance'] = 300
+          elif min(distancesFromGhosts) == 5:
+              features['ghostDistance'] = 200
+          else:
+              features['ghostDistance'] = 100
 
     return features
 
   def getWeights(self, gameState):
 
     if gameState.getScore() > 0:
-      return {'ghostDistance': -2500,'numInvaders': -1000, 'invaderDistance': -10}
+      return {'ghostDistance': -5000,'numInvaders': -1000, 'invaderDistance': -10}
     else:
-      return {'ghostDistance': -2500,'successorScore': -100, 'distanceToFood': -1, 'numInvaders': -100, 'invaderDistance': -10}
+      return {'ghostDistance': -5000,'successorScore': -100, 'distanceToFood': -1, 'numInvaders': -100, 'invaderDistance': -10}
 
   def getActionValue(self, state):
     return self.evaluate(state)
