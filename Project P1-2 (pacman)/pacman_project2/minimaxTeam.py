@@ -50,6 +50,27 @@ class MyAgent(CaptureAgent):
     self.depth = 2
     CaptureAgent.registerInitialState(self, gameState)
 
+  def checkGhosts(self, gameState):
+      myPosition = gameState.getAgentState(self.index).getPosition()
+      enemies = []
+      for opponent in self.getOpponents(gameState):
+          enemies.append(gameState.getAgentState(opponent))
+      pacmans = []  # invaders
+      ghosts = []  # defenders
+      for enemy in enemies:
+          if enemy.isPacman and enemy.getPosition() != None:
+              pacmans.append(enemy)
+          else:
+              ghosts.append(enemy)
+      if len(ghosts) > 0 and gameState.getAgentState(self.index).isPacman:
+          distancesFromGhosts = []
+          for ghost in ghosts:
+              distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
+          if min(distancesFromGhosts) < 5:
+              return False
+          else:
+              return True
+
   def chooseAction(self, gameState):
 
     legalActions = gameState.getLegalActions(self.index)
@@ -63,9 +84,14 @@ class MyAgent(CaptureAgent):
         bestValue = actionValue
         bestAction = action
 
+    foodList = self.getFood(gameState).asList()
+    myPosition = gameState.getAgentState(self.index).getPosition()
+    walls = gameState.getWalls()
+    topFoodList = [(x, y) for x, y in foodList if y > math.floor(walls.height / 2)]
+    botFoodList = [(x, y) for x, y in foodList if y <= math.floor(walls.height / 2)]
     foodLeft = len(self.getFood(gameState).asList())
 
-    if foodLeft <= 2:
+    if (gameState.getAgentState(self.index).numCarrying >= 6 or foodLeft <= 3) and self.checkGhosts(gameState) is True:
         bestDist = 9999
         for action in legalActions:
             successor = self.getSuccessor(gameState, action)
@@ -187,14 +213,7 @@ class MyAgent(CaptureAgent):
           features['distanceToFood'] = minDistance
 
     #defensive features
-    features['numInvaders'] = len(pacmans)
-    if len(pacmans) > 0 and gameState.getAgentState(self.index).scaredTimer <= 10 and not gameState.getAgentState(self.index).isPacman:
-      distancesFromInvaders = []
-      for invader in pacmans:
-        distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
-      features['invaderDistance'] = min(distancesFromInvaders)
-
-    if len(pacmans) > 0 and gameState.getAgentState(self.index).isPacman:
+    if len(pacmans) > 0  and gameState.getAgentState(self.index).scaredTimer <= 27:
         distancesFromInvaders = []
         for invader in pacmans:
             distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
@@ -206,15 +225,15 @@ class MyAgent(CaptureAgent):
       for ghost in ghosts:
         distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
       if min(distancesFromGhosts) < 5:
-        if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
-          if min(distancesFromGhosts) == 1:
-              features['ghostDistance'] = 2000
-          elif min(distancesFromGhosts) == 2:
-              features['ghostDistance'] = 1000
-          elif min(distancesFromGhosts) == 3:
-              features['ghostDistance'] = 300
-          else:
-              features['ghostDistance'] = 100
+        #if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
+        if min(distancesFromGhosts) == 1:
+            features['ghostDistance'] = 2000
+        elif min(distancesFromGhosts) == 2:
+            features['ghostDistance'] = 1000
+        elif min(distancesFromGhosts) == 3:
+            features['ghostDistance'] = 300
+        else:
+            features['ghostDistance'] = 100
 
     return features
 
