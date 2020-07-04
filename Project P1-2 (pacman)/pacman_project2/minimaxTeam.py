@@ -71,24 +71,49 @@ class MyAgent(CaptureAgent):
           else:
               return True
 
+  def minimax(self, gameState, depth, action, alpha, beta):
+
+    if depth == 0:
+        return self.evaluate(gameState), action
+    elif depth%2 == 0 and depth != 0:
+        #looking for min
+        legalActions = gameState.getLegalActions(self.index)
+        minValue = float('inf')
+        minAction = None
+        for action in legalActions:
+            nextState = self.getSuccessor(gameState, action)
+            value, action2 = self.minimax(nextState, depth - 1, action, alpha, beta)
+            if value < minValue:
+                minValue = value
+                minAction = action
+            beta = min(beta, value)
+            if beta <= alpha:
+                break
+        return minValue, minAction
+    elif depth%2 != 0:
+        #looking for max
+        legalActions = gameState.getLegalActions(self.index)
+        maxValue = float('-inf')
+        maxAction = None
+        for action in legalActions:
+            nextState = self.getSuccessor(gameState, action)
+            value, action2 = self.minimax(nextState, depth - 1, action, alpha, beta)
+            if value > maxValue:
+                maxValue = value
+                maxAction = action
+            alpha = max(alpha, value)
+            if beta <= alpha:
+                break
+
+        return maxValue, maxAction
+
   def chooseAction(self, gameState):
 
+    minimaxValue, bestAction = self.minimax(gameState, 3, None, float('-inf'), float('inf'))
     legalActions = gameState.getLegalActions(self.index)
-    bestAction = None
-    bestValue = float('-inf')
-
-    for action in legalActions:
-      nextState = gameState.generateSuccessor(self.index, action)
-      actionValue = self.generateValue(nextState, self.index, 0)
-      if actionValue > bestValue:
-        bestValue = actionValue
-        bestAction = action
 
     foodList = self.getFood(gameState).asList()
-    myPosition = gameState.getAgentState(self.index).getPosition()
     walls = gameState.getWalls()
-    topFoodList = [(x, y) for x, y in foodList if y > math.floor(walls.height / 2)]
-    botFoodList = [(x, y) for x, y in foodList if y <= math.floor(walls.height / 2)]
     foodLeft = len(self.getFood(gameState).asList())
 
     if (gameState.getAgentState(self.index).numCarrying >= 6 or foodLeft <= 3) and self.checkGhosts(gameState) is True:
@@ -103,41 +128,6 @@ class MyAgent(CaptureAgent):
         return bestAction
 
     return bestAction
-
-  #minimax
-  def generateValue(self, gameState, agentIndex, depth):
-
-    if depth == self.depth:
-        if depth%2 == 0:
-            legalActions = gameState.getLegalActions(agentIndex)
-            values = []
-            for action in legalActions:
-                value = self.evaluate(gameState.generateSuccessor(agentIndex, action))
-                values.append(value)
-            return max(values)
-        else:
-            legalActions = gameState.getLegalActions(agentIndex)
-            values = []
-            for action in legalActions:
-                value = self.evaluate(gameState.generateSuccessor(agentIndex, action))
-                values.append(value)
-            return min(values)
-    else:
-        #idi jos u dubinu
-        if depth %2 == 0:
-            legalActions = gameState.getLegalActions(agentIndex)
-            values = []
-            for action in legalActions:
-                value = self.generateValue(gameState.generateSuccessor(agentIndex, action), agentIndex, depth + 1)
-                values.append(value)
-            return max(values)
-        else:
-            legalActions = gameState.getLegalActions(agentIndex)
-            values = []
-            for action in legalActions:
-                value = self.generateValue(gameState.generateSuccessor(agentIndex, action), agentIndex, depth + 1)
-                values.append(value)
-            return min(values)
 
   def getSuccessor(self, gameState, action):
     """
@@ -161,7 +151,6 @@ class MyAgent(CaptureAgent):
 
     #inicijalizacija svega
     features = util.Counter()
-    capsules = gameState.getCapsules()
     foodList = self.getFood(gameState).asList()
     features['successorScore'] = len(foodList)  # self.getScore(successor)
     myPosition = gameState.getAgentState(self.index).getPosition()
@@ -184,12 +173,11 @@ class MyAgent(CaptureAgent):
     if len(foodList) != 0:
       if self.index > 1:
         distancesFromFood = []
-        if (len(topFoodList) != 0):
+        if len(topFoodList) != 0:
           for food in topFoodList:
             distance = self.getMazeDistance(myPosition, food)
             distancesFromFood.append(distance)
           minDistance = min(distancesFromFood)
-
           features['distanceToFood'] = minDistance
         else:
           for food in botFoodList:
@@ -199,7 +187,7 @@ class MyAgent(CaptureAgent):
           features['distanceToFood'] = minDistance
       else:
         distancesFromFood = []
-        if (len(botFoodList) != 0):
+        if len(botFoodList) != 0:
           for food in botFoodList:
             distance = self.getMazeDistance(myPosition, food)
             distancesFromFood.append(distance)
@@ -213,7 +201,7 @@ class MyAgent(CaptureAgent):
           features['distanceToFood'] = minDistance
 
     #defensive features
-    if len(pacmans) > 0  and gameState.getAgentState(self.index).scaredTimer <= 27:
+    if len(pacmans) > 0 and gameState.getAgentState(self.index).scaredTimer <= 27:
         distancesFromInvaders = []
         for invader in pacmans:
             distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
@@ -225,7 +213,6 @@ class MyAgent(CaptureAgent):
       for ghost in ghosts:
         distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
       if min(distancesFromGhosts) < 5:
-        #if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
         if min(distancesFromGhosts) == 1:
             features['ghostDistance'] = 2000
         elif min(distancesFromGhosts) == 2:
