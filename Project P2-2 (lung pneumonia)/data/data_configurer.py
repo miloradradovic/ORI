@@ -4,11 +4,11 @@ import shutil
 def loadData():
     #print(os.listdir("C:/Users/Vukasin/Desktop/chest_xray_data_set/chest_xray_data_set/IM-0689-0001.jpeg"))
     #shutil.move("C:/Users/Vukasin/Desktop/chest_xray_data_set/chest_xray_data_set/IM-0689-0001.jpeg", "C:/Users/Vukasin/Desktop/chest_xray_data_set/VIRUS/IM-0689-0001.jpeg")
-    start_path = "C:/Users/Vukasin/Desktop/chest_xray_data_set/chest_xray_data_set/"
-    normal_path = "C:/Users/Vukasin/Desktop/chest_xray_data_set/NORMAL/"
-    virus_path = "C:/Users/Vukasin/Desktop/chest_xray_data_set/VIRUS/"
-    bacteria_path = "C:/Users/Vukasin/Desktop/chest_xray_data_set/BACTERIA/"
-    f = open("chest_xray_metadata.csv", "r")
+    start_path = "C:/Users/Vukasin/Desktop/chest-xray-dataset-test/chest-xray-dataset-test/test/"
+    normal_path = "C:/Users/Vukasin/Desktop/chest-xray-dataset-test/chest-xray-dataset-test/NORMAL/"
+    virus_path = "C:/Users/Vukasin/Desktop/chest-xray-dataset-test/chest-xray-dataset-test/VIRUS/"
+    bacteria_path = "C:/Users/Vukasin/Desktop/chest-xray-dataset-test/chest-xray-dataset-test/BACTERIA/"
+    f = open("chest_xray_test_dataset.csv", "r")
     #Number,Image_Name,Pnemonia/Normal,,bacteria/virus/''
     for x in f:
         tokens = x.split(",")
