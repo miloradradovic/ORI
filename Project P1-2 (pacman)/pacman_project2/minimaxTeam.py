@@ -47,35 +47,87 @@ class MyAgent(CaptureAgent):
 
   def registerInitialState(self, gameState):
     self.start = gameState.getAgentPosition(self.index)
-    self.depth = 3
+    self.depth = 2
     CaptureAgent.registerInitialState(self, gameState)
+
+  def checkGhosts(self, gameState):
+      myPosition = gameState.getAgentState(self.index).getPosition()
+      enemies = []
+      for opponent in self.getOpponents(gameState):
+          enemies.append(gameState.getAgentState(opponent))
+      pacmans = []  # invaders
+      ghosts = []  # defenders
+      for enemy in enemies:
+          if enemy.isPacman and enemy.getPosition() != None:
+              pacmans.append(enemy)
+          else:
+              ghosts.append(enemy)
+      if len(ghosts) > 0 and gameState.getAgentState(self.index).isPacman:
+          distancesFromGhosts = []
+          for ghost in ghosts:
+              distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
+          if min(distancesFromGhosts) < 5:
+              return False
+          else:
+              return True
+
+  def minimax(self, gameState, depth, action, alpha, beta):
+
+    if depth == 0:
+        return self.evaluate(gameState), action
+    elif depth%2 == 0 and depth != 0:
+        #looking for min
+        legalActions = gameState.getLegalActions(self.index)
+        minValue = float('inf')
+        minAction = None
+        for action in legalActions:
+            nextState = self.getSuccessor(gameState, action)
+            value, action2 = self.minimax(nextState, depth - 1, action, alpha, beta)
+            if value < minValue:
+                minValue = value
+                minAction = action
+            beta = min(beta, value)
+            if beta <= alpha:
+                break
+        return minValue, minAction
+    elif depth%2 != 0:
+        #looking for max
+        legalActions = gameState.getLegalActions(self.index)
+        maxValue = float('-inf')
+        maxAction = None
+        for action in legalActions:
+            nextState = self.getSuccessor(gameState, action)
+            value, action2 = self.minimax(nextState, depth - 1, action, alpha, beta)
+            if value > maxValue:
+                maxValue = value
+                maxAction = action
+            alpha = max(alpha, value)
+            if beta <= alpha:
+                break
+
+        return maxValue, maxAction
 
   def chooseAction(self, gameState):
 
+    minimaxValue, bestAction = self.minimax(gameState, 3, None, float('-inf'), float('inf'))
     legalActions = gameState.getLegalActions(self.index)
-    nextStates = []
-    for action in legalActions:
-      nextStates.append(gameState.generateSuccessor(self.index, action))
-    actionValues = []
 
-    for state in nextStates:
-      actionValues.append(self.getActionValue(state))
-    best = max(actionValues)
-
+    foodList = self.getFood(gameState).asList()
+    walls = gameState.getWalls()
     foodLeft = len(self.getFood(gameState).asList())
 
-    if foodLeft <= 2:
-      bestDist = 9999
-      for action in legalActions:
-        successor = self.getSuccessor(gameState, action)
-        pos2 = successor.getAgentPosition(self.index)
-        dist = self.getMazeDistance(self.start,pos2)
-        if dist < bestDist:
-          bestAction = action
-          bestDist = dist
-      return bestAction
+    if (gameState.getAgentState(self.index).numCarrying >= 6 or foodLeft <= 3) and self.checkGhosts(gameState) is True:
+        bestDist = 9999
+        for action in legalActions:
+            successor = self.getSuccessor(gameState, action)
+            pos2 = successor.getAgentPosition(self.index)
+            dist = self.getMazeDistance(self.start, pos2)
+            if dist < bestDist:
+                bestAction = action
+                bestDist = dist
+        return bestAction
 
-    return legalActions[actionValues.index(best)]
+    return bestAction
 
   def getSuccessor(self, gameState, action):
     """
@@ -99,7 +151,6 @@ class MyAgent(CaptureAgent):
 
     #inicijalizacija svega
     features = util.Counter()
-    capsules = gameState.getCapsules()
     foodList = self.getFood(gameState).asList()
     features['successorScore'] = len(foodList)  # self.getScore(successor)
     myPosition = gameState.getAgentState(self.index).getPosition()
@@ -122,7 +173,7 @@ class MyAgent(CaptureAgent):
     if len(foodList) != 0:
       if self.index > 1:
         distancesFromFood = []
-        if (len(topFoodList) != 0):
+        if len(topFoodList) != 0:
           for food in topFoodList:
             distance = self.getMazeDistance(myPosition, food)
             distancesFromFood.append(distance)
@@ -136,7 +187,7 @@ class MyAgent(CaptureAgent):
           features['distanceToFood'] = minDistance
       else:
         distancesFromFood = []
-        if (len(botFoodList) != 0):
+        if len(botFoodList) != 0:
           for food in botFoodList:
             distance = self.getMazeDistance(myPosition, food)
             distancesFromFood.append(distance)
@@ -150,43 +201,35 @@ class MyAgent(CaptureAgent):
           features['distanceToFood'] = minDistance
 
     #defensive features
-    features['numInvaders'] = len(pacmans)
-    if len(pacmans) > 0 and gameState.getAgentState(self.index).scaredTimer <= 10:
-      distancesFromInvaders = []
-      for invader in pacmans:
-        distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
-      features['invaderDistance'] = min(distancesFromInvaders)
+    if len(pacmans) > 0 and gameState.getAgentState(self.index).scaredTimer <= 27:
+        distancesFromInvaders = []
+        for invader in pacmans:
+            distancesFromInvaders.append(self.getMazeDistance(myPosition, invader.getPosition()))
+        features['invaderDistance'] = min(distancesFromInvaders)
 
     #features za bjezanje ako je pri napadanju duh blizu
     if len(ghosts) > 0 and gameState.getAgentState(self.index).isPacman:
       distancesFromGhosts = []
-      #distancesManhattan = []
       for ghost in ghosts:
         distancesFromGhosts.append(self.getMazeDistance(myPosition, ghost.getPosition()))
-      if min(distancesFromGhosts) < 7:
-        if ghosts[distancesFromGhosts.index(min(distancesFromGhosts))].scaredTimer == 0:
-          features['ghostDistance'] = min(distancesFromGhosts)
+      if min(distancesFromGhosts) < 5:
+        if min(distancesFromGhosts) == 1:
+            features['ghostDistance'] = 2000
+        elif min(distancesFromGhosts) == 2:
+            features['ghostDistance'] = 1000
+        elif min(distancesFromGhosts) == 3:
+            features['ghostDistance'] = 300
+        else:
+            features['ghostDistance'] = 100
 
     return features
 
   def getWeights(self, gameState):
 
     if gameState.getScore() > 0:
-      return {'ghostDistance': -2500,'numInvaders': -1000, 'invaderDistance': -10}
+      return {'ghostDistance': -2000,'numInvaders': -1000, 'invaderDistance': -10}
     else:
-      return {'ghostDistance': -2500,'successorScore': -100, 'distanceToFood': -1, 'numInvaders': -100, 'invaderDistance': -10}
+      return {'ghostDistance': -2000,'successorScore': -100, 'distanceToFood': -1, 'numInvaders': -100, 'invaderDistance': -10}
 
   def getActionValue(self, state):
     return self.evaluate(state)
-
-  def minValue(self, gameState):
-    pass
-
-  def maxValue(self, gameState):
-    pass
-
-  def minimax(self, gameState):
-    pass
-
-  def evaluateFunction(self, gameState):
-    pass
