@@ -80,14 +80,15 @@ class MyAgent(CaptureAgent):
         legalActions = gameState.getLegalActions(self.index)
         minValue = float('inf')
         minAction = None
+        beta2 = beta
         for action in legalActions:
             nextState = self.getSuccessor(gameState, action)
-            value, action2 = self.minimax(nextState, depth - 1, action, alpha, beta)
+            value, action2 = self.minimax(nextState, depth - 1, action, alpha, beta2)
             if value < minValue:
                 minValue = value
                 minAction = action
-            beta = min(beta, value)
-            if beta <= alpha:
+            beta2 = min(beta2, value)
+            if beta2 <= alpha:
                 break
         return minValue, minAction
     elif depth%2 != 0:
@@ -95,14 +96,15 @@ class MyAgent(CaptureAgent):
         legalActions = gameState.getLegalActions(self.index)
         maxValue = float('-inf')
         maxAction = None
+        alpha2 = alpha
         for action in legalActions:
             nextState = self.getSuccessor(gameState, action)
-            value, action2 = self.minimax(nextState, depth - 1, action, alpha, beta)
+            value, action2 = self.minimax(nextState, depth - 1, action, alpha2, beta)
             if value > maxValue:
                 maxValue = value
                 maxAction = action
-            alpha = max(alpha, value)
-            if beta <= alpha:
+            alpha2 = max(alpha2, value)
+            if beta <= alpha2:
                 break
 
         return maxValue, maxAction
