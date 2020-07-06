@@ -75,3 +75,4 @@ def decision_tree(data):
     km = KMeans(n_clusters=8)
     cluster = km.fit_predict(data_pca)
     cluster_report(data, cluster)
+    print("Results saved in: data/results.csv")
